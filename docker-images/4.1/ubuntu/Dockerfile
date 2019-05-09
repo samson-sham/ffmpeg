@@ -41,6 +41,7 @@ ENV         FFMPEG_VERSION=4.1.3     \
             LIBVIDSTAB_VERSION=1.1.0  \
             KVAZAAR_VERSION=1.2.0     \
             AOM_VERSION=v1.0.0        \
+            ZIMG_VERSION=2.8        \
             SRC=/usr/local
 
 ARG         OGG_SHA256SUM="e19ee34711d7af328cb26287f4137e70630e7261b17cbe3cd41011d73a654692  libogg-1.3.2.tar.gz"
@@ -306,6 +307,19 @@ RUN \
         make install ; \
         rm -rf ${DIR}
 
+## z.lib https://github.com/sekrit-twc/zimg/
+RUN \
+        DIR=/tmp/zimg && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sLO https://github.com/sekrit-twc/zimg/archive/release-${ZIMG_VERSION}.tar.gz &&\
+        tar -zx --strip-components=1 -f release-${ZIMG_VERSION}.tar.gz && \
+        ./autogen.sh && \
+        ./configure -prefix="${PREFIX}" --disable-static --enable-shared --enable-simd && \
+        make && \
+        make install && \
+        rm -rf ${DIR}
+
 ## ffmpeg https://ffmpeg.org/
 RUN  \
         DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
@@ -342,6 +356,7 @@ RUN \
         --enable-libfdk_aac \
         --enable-libkvazaar \
         --enable-libaom --extra-libs=-lpthread \
+        --enable-libzimg \
         --enable-postproc \
         --enable-small \
         --enable-version3 \
