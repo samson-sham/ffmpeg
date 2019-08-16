@@ -39,6 +39,8 @@ ENV         FFMPEG_VERSION=4.2 \
             X264_VERSION=20170226-2245-stable \
             X265_VERSION=3.1.1 \
             XVID_VERSION=1.3.4 \
+            VMAF_VERSION=1.3.14 \
+            ZIMG_VERSION=2.8 \
             SRC=/usr/local
 
 ARG         FREETYPE_SHA256SUM="5d03dd76c2171a7601e9ce10551d52d4471cf92cd205948e60289251daddffa8 freetype-2.5.5.tar.gz"
@@ -80,7 +82,7 @@ RUN \
         DIR=/tmp/opencore-amr && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
-        curl -sL https://kent.dl.sourceforge.net/project/opencore-amr/opencore-amr/opencore-amr-${OPENCOREAMR_VERSION}.tar.gz | \
+        curl -sL https://jaist.dl.sourceforge.net/project/opencore-amr/opencore-amr/opencore-amr-${OPENCOREAMR_VERSION}.tar.gz | \
         tar -zx --strip-components=1 && \
         ./configure --prefix="${PREFIX}" --enable-shared  && \
         make && \
@@ -187,7 +189,7 @@ RUN \
         DIR=/tmp/lame && \
         mkdir -p ${DIR} && \
         cd ${DIR} && \
-        curl -sL https://kent.dl.sourceforge.net/project/lame/lame/$(echo ${LAME_VERSION} | sed -e 's/[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)/\1.\2/')/lame-${LAME_VERSION}.tar.gz | \
+        curl -sL https://jaist.dl.sourceforge.net/project/lame/lame/$(echo ${LAME_VERSION} | sed -e 's/[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)/\1.\2/')/lame-${LAME_VERSION}.tar.gz | \
         tar -zx --strip-components=1 && \
         ./configure --prefix="${PREFIX}" --bindir="${PREFIX}/bin" --enable-shared --enable-nasm --enable-pic --disable-frontend && \
         make && \
@@ -306,7 +308,7 @@ RUN \
         rm -rf ${DIR}
 
 RUN \
-	DIR=/tmp/aom && \
+	    DIR=/tmp/aom && \
         git clone --branch ${AOM_VERSION} --depth 1 https://aomedia.googlesource.com/aom ${DIR} ; \
         cd ${DIR} ; \
         rm -rf CMakeCache.txt CMakeFiles ; \
@@ -315,6 +317,34 @@ RUN \
         cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DBUILD_SHARED_LIBS=1 ..; \
         make ; \
         make install ; \
+        rm -rf ${DIR}
+
+## VMAF https://github.com/Netflix/vmaf/
+RUN \
+        DIR=/tmp/vmaf && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sLO https://github.com/Netflix/vmaf/archive/v${VMAF_VERSION}.tar.gz &&\
+        tar -zx --strip-components=1 -f v${VMAF_VERSION}.tar.gz && \
+        cd ptools && \
+        make && \
+        cd ../wrapper && \
+        make && \
+        cd .. && \
+        make install && \
+        rm -rf ${DIR}
+
+## z.lib https://github.com/sekrit-twc/zimg/
+RUN \
+        DIR=/tmp/zimg && \
+        mkdir -p ${DIR} && \
+        cd ${DIR} && \
+        curl -sLO https://github.com/sekrit-twc/zimg/archive/release-${ZIMG_VERSION}.tar.gz &&\
+        tar -zx --strip-components=1 -f release-${ZIMG_VERSION}.tar.gz && \
+        ./autogen.sh && \
+        ./configure -prefix="${PREFIX}" --disable-static --enable-shared --enable-simd && \
+        make && \
+        make install && \
         rm -rf ${DIR}
 
 ## ffmpeg https://ffmpeg.org/
@@ -354,6 +384,8 @@ RUN \
         --enable-libfdk_aac \
         --enable-libkvazaar \
         --enable-libaom --extra-libs=-lpthread \
+        --enable-libvmaf \
+        --enable-libzimg \
         --enable-postproc \
         --enable-small \
         --enable-version3 \
